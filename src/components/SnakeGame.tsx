@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const GRID_SIZE = 20;
-const CELL_SIZE = 20;
+const getCellSize = () => {
+  const isMobile = window.innerWidth < 640;
+  return isMobile ? Math.min(15, Math.floor((window.innerWidth - 80) / GRID_SIZE)) : 20;
+};
 const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 1, y: 0 };
 const INITIAL_SPEED = 150;
@@ -20,9 +23,11 @@ const SnakeGame = () => {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState(INITIAL_SPEED);
+  const [cellSize, setCellSize] = useState(getCellSize());
   
   const directionRef = useRef(direction);
   const gameLoopRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Generate random food position
   const generateFood = useCallback((): Position => {
@@ -88,6 +93,20 @@ const SnakeGame = () => {
     };
   }, [isPlaying, gameOver, moveSnake, speed]);
 
+  // Handle direction change
+  const changeDirection = useCallback((newDirection: Direction) => {
+    if (!isPlaying) return;
+    
+    // Prevent reversing direction
+    if (
+      newDirection.x !== -directionRef.current.x ||
+      newDirection.y !== -directionRef.current.y
+    ) {
+      directionRef.current = newDirection;
+      setDirection(newDirection);
+    }
+  }, [isPlaying]);
+
   // Handle keyboard input
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -107,20 +126,61 @@ const SnakeGame = () => {
       const newDirection = keyMap[e.key];
       if (newDirection) {
         e.preventDefault();
-        // Prevent reversing direction
-        if (
-          newDirection.x !== -directionRef.current.x ||
-          newDirection.y !== -directionRef.current.y
-        ) {
-          directionRef.current = newDirection;
-          setDirection(newDirection);
-        }
+        changeDirection(newDirection);
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isPlaying]);
+  }, [isPlaying, changeDirection]);
+
+  // Handle touch swipe gestures
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current || !isPlaying) return;
+
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = touch.clientY - touchStartRef.current.y;
+      const minSwipeDistance = 30;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (Math.abs(deltaX) > minSwipeDistance) {
+          changeDirection(deltaX > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 });
+        }
+      } else {
+        // Vertical swipe
+        if (Math.abs(deltaY) > minSwipeDistance) {
+          changeDirection(deltaY > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 });
+        }
+      }
+
+      touchStartRef.current = null;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isPlaying, changeDirection]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setCellSize(getCellSize());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Reset game
   const resetGame = () => {
@@ -143,43 +203,45 @@ const SnakeGame = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 p-2 sm:p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-4xl font-bold text-green-600 dark:text-green-400">
+        <CardHeader className="text-center py-3 sm:py-6">
+          <CardTitle className="text-2xl sm:text-4xl font-bold text-green-600 dark:text-green-400">
             🐍 Juego de la Serpiente
           </CardTitle>
-          <CardDescription className="text-lg">
+          <CardDescription className="text-sm sm:text-lg hidden sm:block">
             Usa las flechas o WASD para mover la serpiente
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {/* Score and Controls */}
-          <div className="flex justify-between items-center">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
               Puntuación: {score}
             </div>
             <div className="flex gap-2">
               <Button
                 onClick={togglePlay}
                 variant={isPlaying ? "secondary" : "default"}
-                size="lg"
+                size="sm"
+                className="sm:text-base"
               >
                 {isPlaying ? (
                   <>
-                    <Pause className="mr-2 h-5 w-5" />
-                    Pausar
+                    <Pause className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">Pausar</span>
                   </>
                 ) : (
                   <>
-                    <Play className="mr-2 h-5 w-5" />
-                    {gameOver ? 'Reintentar' : 'Jugar'}
+                    <Play className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">{gameOver ? 'Reintentar' : 'Jugar'}</span>
+                    <span className="sm:hidden">{gameOver ? 'Reintentar' : 'Jugar'}</span>
                   </>
                 )}
               </Button>
-              <Button onClick={resetGame} variant="outline" size="lg">
-                <RotateCcw className="mr-2 h-5 w-5" />
-                Reiniciar
+              <Button onClick={resetGame} variant="outline" size="sm" className="sm:text-base">
+                <RotateCcw className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">Reiniciar</span>
               </Button>
             </div>
           </div>
@@ -187,10 +249,10 @@ const SnakeGame = () => {
           {/* Game Board */}
           <div className="flex justify-center">
             <div
-              className="border-4 border-green-600 dark:border-green-400 rounded-lg bg-green-50 dark:bg-gray-800 shadow-xl"
+              className="border-2 sm:border-4 border-green-600 dark:border-green-400 rounded-lg bg-green-50 dark:bg-gray-800 shadow-xl"
               style={{
-                width: GRID_SIZE * CELL_SIZE,
-                height: GRID_SIZE * CELL_SIZE,
+                width: GRID_SIZE * cellSize,
+                height: GRID_SIZE * cellSize,
                 position: 'relative',
               }}
             >
@@ -204,10 +266,10 @@ const SnakeGame = () => {
                       : 'bg-green-600 dark:bg-green-400 rounded-sm'
                   }`}
                   style={{
-                    left: segment.x * CELL_SIZE,
-                    top: segment.y * CELL_SIZE,
-                    width: CELL_SIZE - 2,
-                    height: CELL_SIZE - 2,
+                    left: segment.x * cellSize,
+                    top: segment.y * cellSize,
+                    width: cellSize - 2,
+                    height: cellSize - 2,
                     transition: 'all 0.05s',
                   }}
                 />
@@ -217,20 +279,20 @@ const SnakeGame = () => {
               <div
                 className="absolute bg-red-500 rounded-full animate-pulse"
                 style={{
-                  left: food.x * CELL_SIZE,
-                  top: food.y * CELL_SIZE,
-                  width: CELL_SIZE - 2,
-                  height: CELL_SIZE - 2,
+                  left: food.x * cellSize,
+                  top: food.y * cellSize,
+                  width: cellSize - 2,
+                  height: cellSize - 2,
                 }}
               />
 
               {/* Game Over Overlay */}
               {gameOver && (
                 <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center rounded-lg">
-                  <div className="text-center text-white">
-                    <h2 className="text-4xl font-bold mb-2">¡Juego Terminado!</h2>
-                    <p className="text-2xl mb-4">Puntuación Final: {score}</p>
-                    <Button onClick={resetGame} size="lg" variant="secondary">
+                  <div className="text-center text-white px-4">
+                    <h2 className="text-2xl sm:text-4xl font-bold mb-2">¡Juego Terminado!</h2>
+                    <p className="text-lg sm:text-2xl mb-4">Puntuación Final: {score}</p>
+                    <Button onClick={resetGame} size="sm" variant="secondary" className="sm:text-base">
                       Jugar de Nuevo
                     </Button>
                   </div>
@@ -239,9 +301,57 @@ const SnakeGame = () => {
             </div>
           </div>
 
+          {/* Mobile Touch Controls */}
+          <div className="flex sm:hidden justify-center items-center">
+            <div className="grid grid-cols-3 gap-2 w-48">
+              <div></div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 w-16"
+                onClick={() => changeDirection({ x: 0, y: -1 })}
+                disabled={!isPlaying}
+              >
+                <ChevronUp className="h-8 w-8" />
+              </Button>
+              <div></div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 w-16"
+                onClick={() => changeDirection({ x: -1, y: 0 })}
+                disabled={!isPlaying}
+              >
+                <ChevronLeft className="h-8 w-8" />
+              </Button>
+              <div></div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 w-16"
+                onClick={() => changeDirection({ x: 1, y: 0 })}
+                disabled={!isPlaying}
+              >
+                <ChevronRight className="h-8 w-8" />
+              </Button>
+              <div></div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 w-16"
+                onClick={() => changeDirection({ x: 0, y: 1 })}
+                disabled={!isPlaying}
+              >
+                <ChevronDown className="h-8 w-8" />
+              </Button>
+              <div></div>
+            </div>
+          </div>
+
           {/* Instructions */}
-          <div className="text-center text-sm text-muted-foreground space-y-1">
-            <p>🎮 Controles: Flechas del teclado o W/A/S/D</p>
+          <div className="text-center text-xs sm:text-sm text-muted-foreground space-y-1">
+            <p className="hidden sm:block">🎮 Controles: Flechas del teclado o W/A/S/D</p>
+            <p className="sm:hidden">🎮 Usa los botones o desliza para mover</p>
             <p>🍎 Come la comida roja para crecer y ganar puntos</p>
             <p>⚡ La velocidad aumenta con cada comida</p>
           </div>
