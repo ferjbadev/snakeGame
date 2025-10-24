@@ -12,6 +12,23 @@ const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 1, y: 0 };
 const INITIAL_SPEED = 150;
 
+const GAME_OVER_PHRASES = [
+  "¡Imbécil perdiste!",
+  "¡Patético!",
+  "¡Qué torpe eres!",
+  "¡Inútil!",
+  "¡Qué burro!",
+  "¡Perdedor!",
+  "Nah marico que malo eres",
+  "¡Malísimo!",
+  "Por eso te pegan cacho",
+  "¡Eres un fracaso!",
+  "¡Qué malo eres!",
+  "Que gay eres",
+  "¡Qué decepción!",
+  "Chavista"
+];
+
 type Position = { x: number; y: number };
 type Direction = { x: number; y: number };
 
@@ -24,6 +41,7 @@ const SnakeGame = () => {
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState(INITIAL_SPEED);
   const [cellSize, setCellSize] = useState(getCellSize());
+  const [gameOverPhrase, setGameOverPhrase] = useState("");
   
   const directionRef = useRef(direction);
   const gameLoopRef = useRef<number | null>(null);
@@ -63,6 +81,9 @@ const SnakeGame = () => {
       if (checkCollision(newHead)) {
         setGameOver(true);
         setIsPlaying(false);
+        // Select random phrase
+        const randomPhrase = GAME_OVER_PHRASES[Math.floor(Math.random() * GAME_OVER_PHRASES.length)];
+        setGameOverPhrase(randomPhrase);
         return prevSnake;
       }
 
@@ -70,7 +91,7 @@ const SnakeGame = () => {
 
       // Check if snake ate food
       if (newHead.x === food.x && newHead.y === food.y) {
-        setScore(prev => prev + 10);
+        setScore(prev => prev + 1);
         setFood(generateFood());
         setSpeed(prev => Math.max(50, prev - 5)); // Increase speed
       } else {
@@ -288,7 +309,7 @@ const SnakeGame = () => {
               {gameOver && (
                 <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center rounded-lg">
                   <div className="text-center text-white px-4">
-                    <h2 className="text-2xl sm:text-4xl font-bold mb-2">Imbecil perdiste!</h2>
+                    <h2 className="text-2xl sm:text-4xl font-bold mb-2">{gameOverPhrase}</h2>
                     <p className="text-lg sm:text-2xl mb-4">Aja papi sacaste: {score}</p>
                     <Button onClick={resetGame} size="sm" variant="secondary" className="sm:text-base">
                       Quieres otra vez?
