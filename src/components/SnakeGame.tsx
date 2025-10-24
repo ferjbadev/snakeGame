@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 
 const GRID_SIZE = 20;
 const getCellSize = () => {
@@ -209,9 +209,7 @@ const SnakeGame = () => {
           <CardTitle className="text-2xl sm:text-4xl font-bold text-green-600 dark:text-green-400">
             🐍 Juego de la Serpiente
           </CardTitle>
-          <CardDescription className="text-sm sm:text-lg hidden sm:block">
-            Usa las flechas o WASD para mover la serpiente
-          </CardDescription>
+          
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
           {/* Score and Controls */}
@@ -290,10 +288,10 @@ const SnakeGame = () => {
               {gameOver && (
                 <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center rounded-lg">
                   <div className="text-center text-white px-4">
-                    <h2 className="text-2xl sm:text-4xl font-bold mb-2">¡Juego Terminado!</h2>
-                    <p className="text-lg sm:text-2xl mb-4">Puntuación Final: {score}</p>
+                    <h2 className="text-2xl sm:text-4xl font-bold mb-2">Imbecil perdiste!</h2>
+                    <p className="text-lg sm:text-2xl mb-4">Aja papi sacaste: {score}</p>
                     <Button onClick={resetGame} size="sm" variant="secondary" className="sm:text-base">
-                      Jugar de Nuevo
+                      Quieres otra vez?
                     </Button>
                   </div>
                 </div>
@@ -303,46 +301,46 @@ const SnakeGame = () => {
 
           {/* Mobile Touch Controls */}
           <div className="flex sm:hidden justify-center items-center">
-            <div className="grid grid-cols-3 gap-2 w-48">
+            <div className="grid grid-cols-3 gap-3 w-64">
               <div></div>
               <Button
                 variant="outline"
                 size="lg"
-                className="h-16 w-16"
+                className="h-20 w-20 border-2 border-black"
                 onClick={() => changeDirection({ x: 0, y: -1 })}
                 disabled={!isPlaying}
               >
-                <ChevronUp className="h-8 w-8" />
+                <span className="text-5xl">⬆️</span>
               </Button>
               <div></div>
               <Button
                 variant="outline"
                 size="lg"
-                className="h-16 w-16"
+                className="h-20 w-20 border-2 border-black"
                 onClick={() => changeDirection({ x: -1, y: 0 })}
                 disabled={!isPlaying}
               >
-                <ChevronLeft className="h-8 w-8" />
+                <span className="text-5xl">⬅️</span>
               </Button>
               <div></div>
               <Button
                 variant="outline"
                 size="lg"
-                className="h-16 w-16"
+                className="h-20 w-20 border-2 border-black"
                 onClick={() => changeDirection({ x: 1, y: 0 })}
                 disabled={!isPlaying}
               >
-                <ChevronRight className="h-8 w-8" />
+                <span className="text-5xl">➡️</span>
               </Button>
               <div></div>
               <Button
                 variant="outline"
                 size="lg"
-                className="h-16 w-16"
+                className="h-20 w-20 border-2 border-black"
                 onClick={() => changeDirection({ x: 0, y: 1 })}
                 disabled={!isPlaying}
               >
-                <ChevronDown className="h-8 w-8" />
+                <span className="text-5xl">⬇️</span>
               </Button>
               <div></div>
             </div>
@@ -350,10 +348,7 @@ const SnakeGame = () => {
 
           {/* Instructions */}
           <div className="text-center text-xs sm:text-sm text-muted-foreground space-y-1">
-            <p className="hidden sm:block">🎮 Controles: Flechas del teclado o W/A/S/D</p>
-            <p className="sm:hidden">🎮 Usa los botones o desliza para mover</p>
-            <p>🍎 Come la comida roja para crecer y ganar puntos</p>
-            <p>⚡ La velocidad aumenta con cada comida</p>
+            <p className="text-black font-bold">El que pierda brinda el desayuno</p>
           </div>
         </CardContent>
       </Card>
